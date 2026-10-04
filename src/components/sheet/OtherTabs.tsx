@@ -104,7 +104,7 @@ export function FeaturesTab() {
   const { c, set } = useChar()
   return (
     <Section
-      title="Умения и особенности"
+      title="Умения и способности"
       actions={
         <button className="btn sm" onClick={() => set((d) => void d.features.push(newFeature()))}>
           + Умение
@@ -149,13 +149,27 @@ export function FeaturesTab() {
   )
 }
 
+const DETAILS: { key: keyof Character['details']; name: string }[] = [
+  { key: 'age', name: 'Возраст' },
+  { key: 'height', name: 'Рост' },
+  { key: 'weight', name: 'Вес' },
+  { key: 'eyes', name: 'Глаза' },
+  { key: 'skin', name: 'Кожа' },
+  { key: 'hair', name: 'Волосы' },
+]
+
 const PERSONALITY: { key: keyof Character['personality']; name: string; rows: number }[] = [
   { key: 'traits', name: 'Черты характера', rows: 3 },
   { key: 'ideals', name: 'Идеалы', rows: 2 },
   { key: 'bonds', name: 'Привязанности', rows: 2 },
   { key: 'flaws', name: 'Слабости', rows: 2 },
-  { key: 'appearance', name: 'Внешность', rows: 3 },
+]
+
+const STORY: { key: keyof Character['personality']; name: string; rows: number }[] = [
+  { key: 'appearance', name: 'Внешний вид персонажа', rows: 4 },
   { key: 'backstory', name: 'Предыстория персонажа', rows: 8 },
+  { key: 'allies', name: 'Союзники и организации', rows: 4 },
+  { key: 'treasure', name: 'Сокровища', rows: 4 },
 ]
 
 export function PersonalityTab() {
@@ -165,6 +179,31 @@ export function PersonalityTab() {
       <Section title="Личность">
         <div className="two-col">
           {PERSONALITY.map((p) => (
+            <Field key={p.key} label={p.name}>
+              <TextArea
+                rows={p.rows}
+                value={c.personality[p.key]}
+                onChange={(v) => set((d) => void (d.personality[p.key] = v))}
+              />
+            </Field>
+          ))}
+        </div>
+      </Section>
+      <Section title="Внешность">
+        <div className="details">
+          {DETAILS.map((p) => (
+            <Field key={p.key} label={p.name}>
+              <TextInput
+                value={c.details[p.key]}
+                onChange={(v) => set((d) => void (d.details[p.key] = v))}
+              />
+            </Field>
+          ))}
+        </div>
+      </Section>
+      <Section title="История персонажа">
+        <div className="two-col">
+          {STORY.map((p) => (
             <Field key={p.key} label={p.name}>
               <TextArea
                 rows={p.rows}

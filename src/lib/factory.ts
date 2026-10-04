@@ -109,6 +109,7 @@ export function newCharacter(): Character {
     exhaustion: 0,
     attacks: [],
     spellcasting: {
+      className: '',
       ability: '',
       autoSlots: true,
       slots: Array.from({ length: 9 }, () => ({ max: 0, used: 0 })),
@@ -122,6 +123,7 @@ export function newCharacter(): Character {
     features: [],
     proficiencies: '',
     languages: '',
+    details: { age: '', height: '', weight: '', eyes: '', skin: '', hair: '' },
     personality: {
       traits: '',
       ideals: '',
@@ -129,6 +131,8 @@ export function newCharacter(): Character {
       flaws: '',
       appearance: '',
       backstory: '',
+      allies: '',
+      treasure: '',
     },
     notes: '',
   }
@@ -148,6 +152,7 @@ export function normalizeCharacter(raw: unknown): Character | null {
     hp: { ...base.hp, ...r.hp },
     deathSaves: { ...base.deathSaves, ...r.deathSaves },
     currency: { ...base.currency, ...r.currency },
+    details: { ...base.details, ...r.details },
     personality: { ...base.personality, ...r.personality },
     spellcasting: {
       ...base.spellcasting,

@@ -263,7 +263,7 @@ function SkillsBlock() {
         ))}
       </ul>
       <p className="hint">
-        ○ нет · ● владение · ◉ компетентность. Пассивная Внимательность: {passive(c, 'perception')}
+        ○ нет · ● владение · ◉ компетентность. Пассивная Мудрость (Восприятие): {passive(c, 'perception')}
       </p>
     </Section>
   )
@@ -349,7 +349,7 @@ function CombatBlock() {
 function ProficienciesBlock() {
   const { c, set } = useChar()
   return (
-    <Section title="Владения и языки" className="span-all">
+    <Section title="Прочие владения и языки" className="span-all">
       <div className="two-col">
         <Field label="Доспехи, оружие, инструменты">
           <TextArea

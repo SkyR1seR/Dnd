@@ -144,6 +144,8 @@ export interface Character {
   attacks: Attack[]
 
   spellcasting: {
+    /** Класс заклинателя (заголовок 3-й страницы листа) */
+    className: string
     ability: Ability | ''
     autoSlots: boolean
     slots: SlotState[] // 9 уровней
@@ -160,6 +162,15 @@ export interface Character {
   proficiencies: string
   languages: string
 
+  /** Внешние данные (2-я страница листа) */
+  details: {
+    age: string
+    height: string
+    weight: string
+    eyes: string
+    skin: string
+    hair: string
+  }
   personality: {
     traits: string
     ideals: string
@@ -167,6 +178,8 @@ export interface Character {
     flaws: string
     appearance: string
     backstory: string
+    allies: string
+    treasure: string
   }
   notes: string
 }

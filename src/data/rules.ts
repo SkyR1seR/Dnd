@@ -20,11 +20,11 @@ export const ABILITY_SHORT: Record<Ability, string> = {
   cha: 'ХАР',
 }
 
+/** Навыки в порядке и с названиями официального русского листа персонажа (PHB 2014) */
 export const SKILLS: { key: SkillKey; name: string; ability: Ability }[] = [
   { key: 'acrobatics', name: 'Акробатика', ability: 'dex' },
-  { key: 'investigation', name: 'Анализ', ability: 'int' },
   { key: 'athletics', name: 'Атлетика', ability: 'str' },
-  { key: 'perception', name: 'Внимательность', ability: 'wis' },
+  { key: 'perception', name: 'Восприятие', ability: 'wis' },
   { key: 'survival', name: 'Выживание', ability: 'wis' },
   { key: 'performance', name: 'Выступление', ability: 'cha' },
   { key: 'intimidation', name: 'Запугивание', ability: 'cha' },
@@ -35,6 +35,7 @@ export const SKILLS: { key: SkillKey; name: string; ability: Ability }[] = [
   { key: 'deception', name: 'Обман', ability: 'cha' },
   { key: 'nature', name: 'Природа', ability: 'int' },
   { key: 'insight', name: 'Проницательность', ability: 'wis' },
+  { key: 'investigation', name: 'Расследование', ability: 'int' },
   { key: 'religion', name: 'Религия', ability: 'int' },
   { key: 'stealth', name: 'Скрытность', ability: 'dex' },
   { key: 'persuasion', name: 'Убеждение', ability: 'cha' },

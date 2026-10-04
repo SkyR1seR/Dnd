@@ -65,7 +65,7 @@ export function PlayHeader() {
           <span>БМ</span>
           <strong>{fmtMod(pb(c))}</strong>
         </div>
-        <div className="stat-chip" title="Пассивная Внимательность">
+        <div className="stat-chip" title="Пассивная Мудрость (Восприятие)">
           <span>Пасс.</span>
           <strong>{passive(c, 'perception')}</strong>
         </div>

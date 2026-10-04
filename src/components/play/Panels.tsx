@@ -41,7 +41,7 @@ export function ChecksPanel() {
                 {fmtMod(mod(c, a))}
               </button>
               <button
-                className={`roll-btn ${c.saveProf[a] ? 'prof' : ''}`}
+                className={`roll-btn ${c.saveProf[a] ? 'is-prof' : ''}`}
                 title={`Спасбросок: ${ABILITY_NAMES[a]}`}
                 onClick={() =>
                   rolls.d20(`Спасбросок ${ABILITY_NAMES[a]}`, saveBonus(c, a), {
@@ -77,8 +77,8 @@ export function ChecksPanel() {
           })}
         </div>
         <p className="hint">
-          Пассивные: Внимательность {passive(c, 'perception')} · Проницательность{' '}
-          {passive(c, 'insight')} · Анализ {passive(c, 'investigation')}
+          Пассивные: Восприятие {passive(c, 'perception')} · Проницательность{' '}
+          {passive(c, 'insight')} · Расследование {passive(c, 'investigation')}
         </p>
       </Section>
     </>

@@ -24,7 +24,14 @@ function SpellcastingBlock() {
   return (
     <Section title="Использование заклинаний">
       <div className="row wrap">
-        <Field label="Базовая характеристика">
+        <Field label="Класс заклинателя">
+          <TextInput
+            value={sc.className}
+            placeholder={c.classes.find((cl) => cl.caster !== 'none')?.name ?? ''}
+            onChange={(v) => set((d) => void (d.spellcasting.className = v))}
+          />
+        </Field>
+        <Field label="Базовая характеристика заклинаний">
           <select
             value={sc.ability}
             onChange={(e) =>
@@ -40,11 +47,11 @@ function SpellcastingBlock() {
           </select>
         </Field>
         <div className="stat-pill">
-          <span>Сл спасброска</span>
+          <span>Сложность спасброска</span>
           <strong>{dc ?? '—'}</strong>
         </div>
         <div className="stat-pill">
-          <span>Бонус атаки</span>
+          <span>Бонус броска атаки</span>
           <strong>{atk === null ? '—' : fmtMod(atk)}</strong>
         </div>
         <label className="check">

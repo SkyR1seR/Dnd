@@ -881,6 +881,12 @@ input.invalid {
   padding-bottom: 10px;
 }
 
+.details {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+
 .coins {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1179,7 +1185,7 @@ input.invalid {
   background: var(--accent-soft);
 }
 
-.roll-btn.prof {
+.roll-btn.is-prof {
   border-color: var(--accent);
 }
 
@@ -1569,7 +1575,8 @@ input.invalid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .coins {
+  .coins,
+  .details {
     grid-template-columns: repeat(3, 1fr);
   }
 

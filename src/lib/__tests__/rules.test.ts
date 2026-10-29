@@ -15,6 +15,7 @@ import {
 import {
   abilityCheckBonus,
   abilityMod,
+  attackDamageExpr,
   combineModes,
   computeSlots,
   conditionEffect,
@@ -24,7 +25,7 @@ import {
   spellSaveDC,
 } from '../calc'
 import { parseDice, rollD20, rollExpr } from '../dice'
-import { newCharacter, newClass, newResource, newSpell, normalizeCharacter } from '../factory'
+import { newAttack, newCharacter, newClass, newResource, newSpell, normalizeCharacter } from '../factory'
 import type { CasterType, Character } from '../../types'
 
 const withClasses = (...cls: [CasterType, number][]): Character => {
@@ -341,5 +342,15 @@ describe('сотворение заклинаний', () => {
     expect(c.spellcasting.pact.used).toBe(0)
     produce(warlock(), (d) => void (r = castSpell(d, 'fam', { kind: 'ritual' })))
     expect(r.ok).toBe(true)
+  })
+})
+
+describe('урон атаки', () => {
+  it('складывает числовые бонусы', () => {
+    const c = withClasses(['half', 3])
+    c.abilities.str = 16
+    expect(attackDamageExpr(c, { ...newAttack(), damage: '1к8+2', ability: 'str' })).toBe('1к8+5')
+    expect(attackDamageExpr(c, { ...newAttack(), damage: '2d6', ability: 'str' })).toBe('2к6+3')
+    expect(attackDamageExpr(c, { ...newAttack(), damage: '1к4', ability: 'str', addAbilityToDamage: false })).toBe('1к4')
   })
 })

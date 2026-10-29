@@ -1,5 +1,6 @@
 import { SKILLS, SPELL_SLOT_TABLE, XP_THRESHOLDS, pactSlots } from '../data/rules'
 import type { Ability, Attack, Character, RollMode, SkillKey } from '../types'
+import { parseDice } from './dice'
 
 export const abilityMod = (score: number) => Math.floor((score - 10) / 2)
 
@@ -71,8 +72,16 @@ export function attackDamageExpr(c: Character, atk: Attack) {
   const a = attackAbility(c, atk)
   const m = atk.addAbilityToDamage && a ? mod(c, a) : 0
   const base = atk.damage.trim() || '0'
-  if (!m) return base
-  return `${base}${m >= 0 ? '+' : ''}${m}`
+  const terms = parseDice(base)
+  if (!terms) return m ? `${base}${m >= 0 ? '+' : ''}${m}` : base
+  // Складываем все числовые слагаемые: «1к8+2» и модификатор 3 → «1к8+5»
+  const flat = terms.filter((t) => !t.sides).reduce((s, t) => s + t.sign * t.value, 0) + m
+  const dice = terms
+    .filter((t) => t.sides)
+    .map((t, i) => `${t.sign < 0 ? '-' : i > 0 ? '+' : ''}${t.count}к${t.sides}`)
+    .join('')
+  if (!dice) return String(flat)
+  return flat ? `${dice}${flat > 0 ? '+' : ''}${flat}` : dice
 }
 
 export function effectiveMaxHp(c: Character) {

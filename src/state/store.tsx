@@ -58,6 +58,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const c = normalizeCharacter(raw)
     if (!c) return null
     c.id = uid()
+    syncSlots(c)
     setCharacters((list) => [...list, c])
     return c.id
   }, [])

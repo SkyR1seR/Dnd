@@ -316,7 +316,7 @@ function SpellRow({
               <TextInput
                 className={s.damage && !parseDice(s.damage) ? 'invalid' : ''}
                 value={s.damage}
-                placeholder="8d6"
+                placeholder="8к6"
                 onChange={(v) => onChange((x) => void (x.damage = v))}
               />
             </Field>

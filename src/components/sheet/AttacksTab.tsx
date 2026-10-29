@@ -61,7 +61,7 @@ function AttacksEditor() {
                   <TextInput
                     className={badDice ? 'invalid' : ''}
                     value={a.damage}
-                    placeholder="1d8"
+                    placeholder="1к8"
                     onChange={(v) => upd((x) => void (x.damage = v))}
                   />
                 </Field>

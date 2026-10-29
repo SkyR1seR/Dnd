@@ -1,12 +1,24 @@
 import { produce } from 'immer'
 import { describe, expect, it } from 'vitest'
-import { applyDamage, heal, longRest, shortRest, syncSlots } from '../actions'
 import {
+  applyDamage,
+  breakConcentrationIfIncapacitated,
+  deathSave,
+  heal,
+  isStable,
+  longRest,
+  setTempHp,
+  shortRest,
+  syncSlots,
+} from '../actions'
+import {
+  abilityCheckBonus,
   abilityMod,
   combineModes,
   computeSlots,
   conditionEffect,
   proficiencyBonus,
+  passive,
   skillBonus,
   spellSaveDC,
 } from '../calc'
@@ -213,5 +225,76 @@ describe('импорт', () => {
     expect(c.abilities.dex).toBe(10)
     expect(c.spellcasting.slots).toHaveLength(9)
     expect(normalizeCharacter(null)).toBeNull()
+  })
+})
+
+describe('правила «Книги игрока» (рус.)', () => {
+  const down = () => {
+    const c = withClasses(['full', 4])
+    c.hp = { max: 30, current: 0, temp: 0 }
+    c.conditions = ['unconscious']
+    return c
+  }
+
+  it('крит при 0 хитов — два провала (с. 197)', () => {
+    const c = produce(down(), (d) => void applyDamage(d, 3, true))
+    expect(c.deathSaves.failures).toBe(2)
+  })
+
+  it('спасброски от смерти: 20 — 1 хит, 1 — два провала, три успеха — стабилизация', () => {
+    expect(produce(down(), (d) => void deathSave(d, 20)).hp.current).toBe(1)
+    expect(produce(down(), (d) => void deathSave(d, 1)).deathSaves.failures).toBe(2)
+    const stable = produce(down(), (d) => {
+      d.deathSaves.successes = 2
+      deathSave(d, 12)
+    })
+    expect(isStable(stable)).toBe(true)
+    // Урон по стабилизированному — снова спасброски
+    const hurt = produce(stable, (d) => void applyDamage(d, 2))
+    expect(hurt.deathSaves).toEqual({ successes: 0, failures: 1 })
+  })
+
+  it('умерший не лечится, продолжительный отдых требует 1 хит', () => {
+    const dead = produce(down(), (d) => void (d.deathSaves.failures = 3))
+    expect(produce(dead, (d) => void heal(d, 10)).hp.current).toBe(0)
+    expect(produce(down(), (d) => void longRest(d)).hp.current).toBe(0)
+  })
+
+  it('временные хиты не складываются (с. 198)', () => {
+    const c = produce(down(), (d) => {
+      d.hp.current = 10
+      setTempHp(d, 10)
+      setTempHp(d, 5)
+    })
+    expect(c.hp.temp).toBe(10)
+  })
+
+  it('недееспособность прерывает концентрацию (с. 203)', () => {
+    const c = produce(withClasses(['full', 1]), (d) => {
+      d.spellcasting.concentration = 'Паутина'
+      d.conditions.push('stunned')
+      breakConcentrationIfIncapacitated(d)
+    })
+    expect(c.spellcasting.concentration).toBe('')
+    const ko = produce(withClasses(['full', 1]), (d) => {
+      d.hp = { max: 10, current: 3, temp: 0 }
+      d.spellcasting.concentration = 'Паутина'
+      applyDamage(d, 5)
+    })
+    expect(ko.spellcasting.concentration).toBe('')
+  })
+
+  it('мастер на все руки — ко всем проверкам характеристик (с. 54)', () => {
+    const c = withClasses(['full', 5])
+    c.jackOfAllTrades = true
+    expect(abilityCheckBonus(c, 'str')).toBe(0 + 1)
+  })
+
+  it('пассивная проверка: −5 при помехе (с. 175)', () => {
+    const c = withClasses(['full', 1])
+    c.abilities.wis = 14
+    expect(passive(c, 'perception')).toBe(12)
+    c.conditions = ['poisoned']
+    expect(passive(c, 'perception')).toBe(7)
   })
 })

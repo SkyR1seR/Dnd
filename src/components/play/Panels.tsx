@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { CONDITIONS, EXHAUSTION_LEVELS } from '../../data/conditions'
 import { ABILITIES, ABILITY_NAMES, ABILITY_SHORT, SKILLS } from '../../data/rules'
-import { longRest, shortRest, spendHitDie } from '../../lib/actions'
+import { breakConcentrationIfIncapacitated, longRest, shortRest, spendHitDie } from '../../lib/actions'
 import {
+  abilityCheckBonus,
   attackDamageExpr,
   attackToHit,
   effectiveMaxHp,
@@ -34,11 +35,14 @@ export function ChecksPanel() {
                 className="roll-btn"
                 title={`Проверка: ${ABILITY_NAMES[a]}`}
                 onClick={() =>
-                  rolls.d20(`Проверка ${ABILITY_NAMES[a]}`, mod(c, a), { kind: 'check', ability: a })
+                  rolls.d20(`Проверка ${ABILITY_NAMES[a]}`, abilityCheckBonus(c, a), {
+                    kind: 'check',
+                    ability: a,
+                  })
                 }
               >
                 <small>Проверка</small>
-                {fmtMod(mod(c, a))}
+                {fmtMod(abilityCheckBonus(c, a))}
               </button>
               <button
                 className={`roll-btn ${c.saveProf[a] ? 'is-prof' : ''}`}
@@ -77,8 +81,8 @@ export function ChecksPanel() {
           })}
         </div>
         <p className="hint">
-          Пассивные: Восприятие {passive(c, 'perception')} · Проницательность{' '}
-          {passive(c, 'insight')} · Расследование {passive(c, 'investigation')}
+          Пассивные: Внимательность {passive(c, 'perception')} · Проницательность{' '}
+          {passive(c, 'insight')} · Анализ {passive(c, 'investigation')}
         </p>
       </Section>
     </>
@@ -137,6 +141,7 @@ export function AttacksPanel() {
 
 export function ConditionsPanel() {
   const { c, set } = useChar()
+  const rolls = useRolls()
   const [info, setInfo] = useState<string | null>(null)
   const active = CONDITIONS.filter((x) => c.conditions.includes(x.key))
   return (
@@ -150,13 +155,15 @@ export function ConditionsPanel() {
               className={`chip ${on ? 'on' : ''}`}
               title={cond.text}
               aria-pressed={on}
-              onClick={() =>
-                set((d) => {
+              onClick={() => {
+                const log = set((d) => {
                   d.conditions = on
                     ? d.conditions.filter((k) => k !== cond.key)
                     : [...d.conditions, cond.key]
+                  return breakConcentrationIfIncapacitated(d)
                 })
-              }
+                if (log.length) rolls.note(cond.name, log)
+              }}
               onContextMenu={(e) => {
                 e.preventDefault()
                 setInfo(cond.key)
@@ -272,7 +279,7 @@ export function RestPanel() {
               return (
                 <div key={cl.id} className="row between">
                   <span>
-                    {cl.name || 'Класс'}: d{cl.hitDie} — осталось {left}/{cl.level}
+                    {cl.name || 'Класс'}: к{cl.hitDie} — осталось {left}/{cl.level}
                   </span>
                   <button
                     className="btn sm"
@@ -280,12 +287,12 @@ export function RestPanel() {
                     onClick={() => {
                       const roll = rollDie(cl.hitDie)
                       const healed = set((d) => spendHitDie(d, cl.id, roll))
-                      rolls.note(`Кость хитов d${cl.hitDie}: ${roll} ${fmtMod(mod(c, 'con'))}`, [
+                      rolls.note(`Кость хитов к${cl.hitDie}: ${roll} ${fmtMod(mod(c, 'con'))}`, [
                         `Восстановлено ${healed} хитов`,
                       ])
                     }}
                   >
-                    Бросить d{cl.hitDie}
+                    Бросить к{cl.hitDie}
                   </button>
                 </div>
               )

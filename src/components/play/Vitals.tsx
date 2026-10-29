@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { applyDamage, heal, setTempHp } from '../../lib/actions'
+import { applyDamage, deathSave, heal, isDead, isStable, setTempHp } from '../../lib/actions'
 import {
   effectiveMaxHp,
   effectiveSpeed,
@@ -65,7 +65,7 @@ export function PlayHeader() {
           <span>БМ</span>
           <strong>{fmtMod(pb(c))}</strong>
         </div>
-        <div className="stat-chip" title="Пассивная Мудрость (Восприятие)">
+        <div className="stat-chip" title="Пассивная Мудрость (Внимательность)">
           <span>Пасс.</span>
           <strong>{passive(c, 'perception')}</strong>
         </div>
@@ -112,22 +112,27 @@ export function HpPanel() {
   const { c, set } = useChar()
   const rolls = useRolls()
   const [amount, setAmount] = useState('')
+  const [crit, setCrit] = useState(false)
   const n = Math.max(0, parseInt(amount, 10) || 0)
   const act = (fn: 'dmg' | 'heal' | 'temp') => {
     if (!n) return
     const log = set((d) => {
-      if (fn === 'dmg') return applyDamage(d, n)
+      if (fn === 'dmg') return applyDamage(d, n, crit)
       if (fn === 'heal') return heal(d, n)
-      setTempHp(d, n)
-      return []
+      return setTempHp(d, n)
     })
     const label =
-      fn === 'dmg' ? `Получено урона: ${n}` : fn === 'heal' ? `Лечение: ${n}` : `Временные хиты: ${n}`
+      fn === 'dmg'
+        ? `Получено урона: ${n}${crit ? ' (крит)' : ''}`
+        : fn === 'heal'
+          ? `Лечение: ${n}`
+          : `Временные хиты: ${n}`
     rolls.note(label, log)
     setAmount('')
+    setCrit(false)
   }
   const down = c.hp.current === 0
-  const dead = c.deathSaves.failures >= 3
+  const dead = isDead(c)
   return (
     <Section title="Хиты" className={down ? 'danger-card' : ''}>
       <div className="hp-big">
@@ -161,6 +166,12 @@ export function HpPanel() {
             +{v}
           </button>
         ))}
+        {down && (
+          <label className="check small" title="Урон от критического попадания при 0 хитов — два провала">
+            <input type="checkbox" checked={crit} onChange={(e) => setCrit(e.target.checked)} />
+            Крит. попадание
+          </label>
+        )}
         {c.hp.temp > 0 && (
           <button className="btn ghost xs" onClick={() => set((d) => void (d.hp.temp = 0))}>
             Сбросить врем.
@@ -177,19 +188,11 @@ export function HpPanel() {
 function DeathSaves({ dead }: { dead: boolean }) {
   const { c, set } = useChar()
   const rolls = useRolls()
-  const stable = c.deathSaves.successes >= 3
+  const stable = isStable(c)
   const rollSave = () => {
     const e = rolls.d20('Спасбросок от смерти', 0, { kind: 'death' })
-    const r = e.d20!.kept
-    set((d) => {
-      if (r === 20) {
-        d.hp.current = 1
-        d.deathSaves = { successes: 0, failures: 0 }
-        d.conditions = d.conditions.filter((k) => k !== 'unconscious')
-      } else if (r === 1) d.deathSaves.failures = Math.min(3, d.deathSaves.failures + 2)
-      else if (r >= 10) d.deathSaves.successes = Math.min(3, d.deathSaves.successes + 1)
-      else d.deathSaves.failures = Math.min(3, d.deathSaves.failures + 1)
-    })
+    const log = set((d) => deathSave(d, e.d20!.kept))
+    if (log.length) rolls.note('Спасбросок от смерти', log)
   }
   return (
     <div className="death-saves">
@@ -216,7 +219,10 @@ function DeathSaves({ dead }: { dead: boolean }) {
       {dead ? (
         <p className="warn">Персонаж погиб.</p>
       ) : stable ? (
-        <p className="ok">Персонаж стабилизирован.</p>
+        <p className="ok small">
+          Персонаж стабилизирован: не совершает спасброски от смерти, но остаётся без сознания.
+          Без лечения восстановит 1 хит через 1к4 часа.
+        </p>
       ) : (
         c.hp.current === 0 && (
           <button className="btn primary" onClick={rollSave}>

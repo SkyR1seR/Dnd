@@ -22,11 +22,11 @@ export function DiceTray() {
             className="die-btn"
             onClick={() =>
               d === 20
-                ? rolls.d20('d20', 0, { kind: 'plain' })
-                : rolls.dice(`d${d}`, `1d${d}`)
+                ? rolls.d20('к20', 0, { kind: 'plain' })
+                : rolls.dice(`к${d}`, `1к${d}`)
             }
           >
-            d{d}
+            к{d}
           </button>
         ))}
       </div>
@@ -39,7 +39,7 @@ export function DiceTray() {
       >
         <input
           className={`grow ${valid ? '' : 'invalid'}`}
-          placeholder="Например: 2d6+3"
+          placeholder="Например: 2к6+3"
           value={expr}
           onChange={(e) => setExpr(e.target.value)}
           aria-label="Выражение для броска"
@@ -63,7 +63,7 @@ function EntryBody({ e, big = false }: { e: LogEntry; big?: boolean }) {
           {e.autoFail ? 'Провал' : r.total}
         </div>
         <div className="detail">
-          d20:{' '}
+          к20:{' '}
           {second === undefined ? (
             <b>{first}</b>
           ) : (

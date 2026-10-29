@@ -68,7 +68,7 @@ export function describeRoll(r: RollResult) {
     .map((t, i) => {
       const sign = t.sign < 0 ? '−' : i > 0 ? '+' : ''
       if (!t.sides) return `${sign}${t.value}`
-      return `${sign}${t.count}d${t.sides}[${t.results.join(',')}]`
+      return `${sign}${t.count}к${t.sides}[${t.results.join(',')}]`
     })
     .join(' ')
 }

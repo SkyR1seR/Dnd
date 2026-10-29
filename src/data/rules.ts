@@ -20,11 +20,15 @@ export const ABILITY_SHORT: Record<Ability, string> = {
   cha: 'ХАР',
 }
 
-/** Навыки в порядке и с названиями официального русского листа персонажа (PHB 2014) */
+/**
+ * Навыки — «Книга игрока» (рус.), глава 7 и англо-русский словарь (с. 313).
+ * В скобках — название из другого распространённого перевода и русского листа персонажа.
+ */
 export const SKILLS: { key: SkillKey; name: string; ability: Ability }[] = [
   { key: 'acrobatics', name: 'Акробатика', ability: 'dex' },
+  { key: 'investigation', name: 'Анализ (Расследование)', ability: 'int' },
   { key: 'athletics', name: 'Атлетика', ability: 'str' },
-  { key: 'perception', name: 'Восприятие', ability: 'wis' },
+  { key: 'perception', name: 'Внимательность (Восприятие)', ability: 'wis' },
   { key: 'survival', name: 'Выживание', ability: 'wis' },
   { key: 'performance', name: 'Выступление', ability: 'cha' },
   { key: 'intimidation', name: 'Запугивание', ability: 'cha' },
@@ -35,7 +39,6 @@ export const SKILLS: { key: SkillKey; name: string; ability: Ability }[] = [
   { key: 'deception', name: 'Обман', ability: 'cha' },
   { key: 'nature', name: 'Природа', ability: 'int' },
   { key: 'insight', name: 'Проницательность', ability: 'wis' },
-  { key: 'investigation', name: 'Расследование', ability: 'int' },
   { key: 'religion', name: 'Религия', ability: 'int' },
   { key: 'stealth', name: 'Скрытность', ability: 'dex' },
   { key: 'persuasion', name: 'Убеждение', ability: 'cha' },
@@ -93,7 +96,7 @@ export const ALIGNMENTS = [
   'Нейтрально-добрый',
   'Хаотично-добрый',
   'Законно-нейтральный',
-  'Истинно нейтральный',
+  'Нейтральный',
   'Хаотично-нейтральный',
   'Законно-злой',
   'Нейтрально-злой',

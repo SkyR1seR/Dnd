@@ -155,7 +155,7 @@ function ClassesBlock() {
               >
                 {[6, 8, 10, 12].map((n) => (
                   <option key={n} value={n}>
-                    d{n}
+                    к{n}
                   </option>
                 ))}
               </select>
@@ -263,7 +263,7 @@ function SkillsBlock() {
         ))}
       </ul>
       <p className="hint">
-        ○ нет · ● владение · ◉ компетентность. Пассивная Мудрость (Восприятие): {passive(c, 'perception')}
+        ○ нет · ● владение · ◉ компетентность. Пассивная Мудрость (Внимательность): {passive(c, 'perception')}
       </p>
     </Section>
   )
@@ -319,7 +319,7 @@ function CombatBlock() {
         <span className="field-label">Кости хитов</span>
         {c.classes.map((cl) => (
           <span key={cl.id} className="tag">
-            {cl.level - cl.hitDiceUsed}/{cl.level} d{cl.hitDie} {cl.name && `(${cl.name})`}
+            {cl.level - cl.hitDiceUsed}/{cl.level} к{cl.hitDie} {cl.name && `(${cl.name})`}
           </span>
         ))}
       </div>

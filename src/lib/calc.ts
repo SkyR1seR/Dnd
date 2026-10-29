@@ -14,6 +14,10 @@ export const pb = (c: Character) => proficiencyBonus(totalLevel(c))
 
 export const mod = (c: Character, a: Ability) => abilityMod(c.abilities[a])
 
+/** Проверка характеристики; «Мастер на все руки» добавляет половину БМ ко всем проверкам без владения (с. 54) */
+export const abilityCheckBonus = (c: Character, a: Ability) =>
+  mod(c, a) + (c.jackOfAllTrades ? Math.floor(pb(c) / 2) : 0)
+
 export const saveBonus = (c: Character, a: Ability) => mod(c, a) + (c.saveProf[a] ? pb(c) : 0)
 
 export function skillBonus(c: Character, key: SkillKey) {
@@ -27,7 +31,13 @@ export function skillBonus(c: Character, key: SkillKey) {
   return bonus
 }
 
-export const passive = (c: Character, key: SkillKey) => 10 + skillBonus(c, key)
+/** Пассивная проверка (с. 175): 10 + модификаторы; +5 при преимуществе, −5 при помехе */
+export function passive(c: Character, key: SkillKey) {
+  const skill = SKILLS.find((s) => s.key === key)!
+  const eff = conditionEffect(c, { kind: 'check', ability: skill.ability })
+  const shift = eff.mode === 'advantage' ? 5 : eff.mode === 'disadvantage' ? -5 : 0
+  return 10 + skillBonus(c, key) + shift
+}
 
 export const initiative = (c: Character) =>
   mod(c, 'dex') + c.initiativeBonus + (c.jackOfAllTrades ? Math.floor(pb(c) / 2) : 0)

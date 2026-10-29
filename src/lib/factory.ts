@@ -32,7 +32,7 @@ export const newAttack = (): Attack => ({
   ability: 'str',
   proficient: true,
   attackBonus: 0,
-  damage: '1d6',
+  damage: '1к6',
   addAbilityToDamage: true,
   damageType: '',
   notes: '',

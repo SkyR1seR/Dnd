@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { ABILITY_NAMES, SPELL_LEVEL_NAMES } from '../../data/rules'
+import { castSpell } from '../../lib/actions'
+import type { CastChoice } from '../../lib/actions'
 import { fmtMod, saveBonus, spellAttack, spellSaveDC } from '../../lib/calc'
 import { useRolls } from '../../state/rolls'
 import { useChar } from '../../state/store'
 import type { Spell } from '../../types'
 import { Modal, Pips, Section } from '../ui'
 
-type SlotChoice = { kind: 'slot'; level: number } | { kind: 'pact' } | { kind: 'ritual' } | { kind: 'free' }
 
 export function SpellsPanel() {
   const { c, set } = useChar()
@@ -24,29 +25,24 @@ export function SpellsPanel() {
     .filter((s) => showAll || s.level === 0 || s.prepared || s.alwaysPrepared)
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, 'ru'))
 
-  const cast = (spell: Spell, choice: SlotChoice) => {
-    let slotLevel = spell.level
-    set((d) => {
-      if (choice.kind === 'slot') {
-        d.spellcasting.slots[choice.level - 1].used += 1
-        slotLevel = choice.level
-      } else if (choice.kind === 'pact') {
-        d.spellcasting.pact.used += 1
-        slotLevel = d.spellcasting.pact.level
-      }
-      if (spell.concentration) d.spellcasting.concentration = spell.name
-    })
+  const cast = (spell: Spell, choice: CastChoice) => {
+    const res = set((d) => castSpell(d, spell.id, choice))
+    if (!res.ok) {
+      rolls.note(`Не удалось сотворить: ${spell.name}`, res.log)
+      setCasting(null)
+      return
+    }
     const how =
       choice.kind === 'ritual'
         ? 'как ритуал'
-        : choice.kind === 'free'
-          ? spell.level === 0
-            ? 'заговор'
-            : 'без ячейки'
-          : `ячейка ${slotLevel} ур.`
-    const notes: string[] = []
-    if (sc.concentration && spell.concentration && sc.concentration !== spell.name)
-      notes.push(`Концентрация на «${sc.concentration}» прервана`)
+        : choice.kind === 'resource'
+          ? 'без ячейки'
+          : choice.kind === 'free'
+            ? spell.level === 0
+              ? 'заговор'
+              : 'без ячейки'
+            : `ячейка ${res.slotLevel} ур.`
+    const notes: string[] = [...res.log]
     if (spell.save && dc !== null)
       notes.push(`Цель: спасбросок ${ABILITY_NAMES[spell.save]}, Сл ${dc}`)
     if (spell.attackRoll && atk !== null) {
@@ -173,7 +169,11 @@ export function SpellsPanel() {
       </div>
 
       {casting && (
-        <CastModal spell={casting} onCast={(ch) => cast(casting, ch)} onClose={() => setCasting(null)} />
+        <CastModal
+          spell={casting}
+          onCast={(ch) => cast(casting, ch)}
+          onClose={() => setCasting(null)}
+        />
       )}
       {details && (
         <Modal title={details.name} onClose={() => setDetails(null)}>
@@ -208,7 +208,7 @@ function CastModal({
   onClose,
 }: {
   spell: Spell
-  onCast: (ch: SlotChoice) => void
+  onCast: (ch: CastChoice) => void
   onClose: () => void
 }) {
   const { c } = useChar()
@@ -218,6 +218,44 @@ function CastModal({
     .filter((o) => o.level >= spell.level && o.max > 0)
   const pactOk = sc.pact.max > 0 && sc.pact.level >= spell.level
   const nothing = options.every((o) => o.left <= 0) && (!pactOk || sc.pact.used >= sc.pact.max)
+  const resource = c.resources.find((r) => r.id === spell.resourceId)
+  if (resource && spell.resourceOnly) {
+    return (
+      <Modal title={`Сотворить: ${spell.name}`} onClose={onClose}>
+        <p className="muted">Накладывается без ячейки за счёт ресурса «{resource.name}».</p>
+        {spell.concentration && sc.concentration && (
+          <p className="warn">
+            Вы концентрируетесь на «{sc.concentration}» — новое заклинание прервёт концентрацию.
+          </p>
+        )}
+        {resource.current <= 0 && <p className="warn">Ресурс исчерпан до отдыха.</p>}
+        <div className="row end">
+          <button
+            className="btn primary"
+            disabled={resource.current <= 0}
+            onClick={() => onCast({ kind: 'resource' })}
+          >
+            Сотворить ({resource.current}/{resource.max})
+          </button>
+        </div>
+      </Modal>
+    )
+  }
+  if (spell.ritualOnly) {
+    return (
+      <Modal title={`Сотворить: ${spell.name}`} onClose={onClose}>
+        <p className="muted">
+          Это заклинание можно наложить только как ритуал: на 10 минут дольше обычного, без
+          траты ячейки.
+        </p>
+        <div className="row end">
+          <button className="btn primary" onClick={() => onCast({ kind: 'ritual' })}>
+            Наложить как ритуал
+          </button>
+        </div>
+      </Modal>
+    )
+  }
   return (
     <Modal title={`Сотворить: ${spell.name}`} onClose={onClose}>
       {spell.concentration && sc.concentration && (
@@ -251,6 +289,21 @@ function CastModal({
         )}
       </div>
       {nothing && <p className="warn">Нет доступных ячеек.</p>}
+      {resource && (
+        <div className="row wrap">
+          <button
+            className="btn primary"
+            disabled={resource.current <= 0}
+            onClick={() => onCast({ kind: 'resource' })}
+          >
+            {resource.name}{' '}
+            <span className="small">
+              ({resource.current}/{resource.max})
+            </span>
+          </button>
+          <span className="muted small">без ячейки</span>
+        </div>
+      )}
       <div className="row end">
         {spell.ritual && (
           <button className="btn ghost" onClick={() => onCast({ kind: 'ritual' })}>

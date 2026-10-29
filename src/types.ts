@@ -77,6 +77,15 @@ export interface Spell {
   duration: string
   concentration: boolean
   ritual: boolean
+  /** Можно накладывать только как ритуал (например, «Книга древних секретов») */
+  ritualOnly: boolean
+  /** Временные хиты при сотворении (выражение) и прибавка за каждый уровень ячейки выше базового */
+  tempHp: string
+  tempHpUpcast: number
+  /** id ресурса, позволяющего сотворить заклинание без ячейки (например, «Магия дроу») */
+  resourceId: string
+  /** Заклинание не известно классу — накладывается только за счёт ресурса (магия дроу и т. п.) */
+  resourceOnly: boolean
   /** Что делает заклинание при сотворении */
   attackRoll: boolean
   save: Ability | ''

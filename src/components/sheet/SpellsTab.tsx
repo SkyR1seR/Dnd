@@ -196,6 +196,7 @@ function SpellRow({
   onChange: (fn: (s: Spell) => void) => void
   onDelete: () => void
 }) {
+  const resources = useChar().c.resources
   return (
     <div className={`spell-row ${open ? 'open' : ''}`}>
       <div className="spell-line">
@@ -213,7 +214,11 @@ function SpellRow({
           {s.name}
         </button>
         {s.concentration && <span className="badge" title="Концентрация">К</span>}
-        {s.ritual && <span className="badge" title="Ритуал">Р</span>}
+        {s.ritual && (
+          <span className="badge" title={s.ritualOnly ? 'Только как ритуал' : 'Ритуал'}>
+            {s.ritualOnly ? 'Р!' : 'Р'}
+          </span>
+        )}
         <span className="muted small">{s.castingTime}</span>
       </div>
       {open && (
@@ -283,6 +288,16 @@ function SpellRow({
               />
               Ритуал
             </label>
+            {s.ritual && (
+              <label className="check" title="Например, ритуалы из «Книги древних секретов»">
+                <input
+                  type="checkbox"
+                  checked={s.ritualOnly}
+                  onChange={(e) => onChange((x) => void (x.ritualOnly = e.target.checked))}
+                />
+                Только как ритуал
+              </label>
+            )}
             <label className="check">
               <input
                 type="checkbox"
@@ -320,6 +335,46 @@ function SpellRow({
                 onChange={(v) => onChange((x) => void (x.damage = v))}
               />
             </Field>
+          </div>
+          <div className="row wrap">
+            <Field label="Временные хиты при сотворении">
+              <TextInput
+                className={s.tempHp && !parseDice(s.tempHp) ? 'invalid' : ''}
+                value={s.tempHp}
+                placeholder="5 или 1к4+4"
+                onChange={(v) => onChange((x) => void (x.tempHp = v))}
+              />
+            </Field>
+            <Field label="+ за уровень ячейки выше">
+              <NumInput
+                value={s.tempHpUpcast}
+                min={0}
+                onChange={(v) => onChange((x) => void (x.tempHpUpcast = v))}
+              />
+            </Field>
+            <Field label="Без ячейки за счёт ресурса" className="grow-2">
+              <select
+                value={s.resourceId}
+                onChange={(e) => onChange((x) => void (x.resourceId = e.target.value))}
+              >
+                <option value="">—</option>
+                {resources.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {s.resourceId && (
+              <label className="check self-end">
+                <input
+                  type="checkbox"
+                  checked={s.resourceOnly}
+                  onChange={(e) => onChange((x) => void (x.resourceOnly = e.target.checked))}
+                />
+                Только за счёт ресурса
+              </label>
+            )}
           </div>
           <Field label="Описание">
             <TextArea

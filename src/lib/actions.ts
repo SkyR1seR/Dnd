@@ -4,6 +4,7 @@
  * Ссылки на страницы — «Книга игрока» (рус., 2016), глава 9 «Сражение» и глава 10 «Использование заклинаний».
  */
 import { computeSlots, effectiveMaxHp, mod, totalLevel } from './calc'
+import { rollExpr } from './dice'
 import type { Character } from '../types'
 
 export const isDead = (c: Character) => c.deathSaves.failures >= 3
@@ -191,4 +192,70 @@ export function spendHitDie(c: Character, classId: string, roll: number): number
   const amount = Math.max(0, roll + mod(c, 'con'))
   heal(c, amount)
   return amount
+}
+
+export type CastChoice =
+  | { kind: 'slot'; level: number }
+  | { kind: 'pact' }
+  | { kind: 'ritual' }
+  | { kind: 'resource' }
+  | { kind: 'free' }
+
+export interface CastResult {
+  ok: boolean
+  slotLevel: number
+  log: string[]
+}
+
+/**
+ * Сотворение заклинания: тратит ячейку или ресурс, обновляет концентрацию,
+ * начисляет временные хиты (например, «Доспех Агатиса»).
+ * Ритуал (с. 201) не тратит ячейку и доступен только заклинаниям с пометкой «ритуал».
+ */
+export function castSpell(
+  c: Character,
+  spellId: string,
+  choice: CastChoice,
+  roll: (expr: string) => number = (e) => rollExpr(e)?.total ?? 0,
+): CastResult {
+  const spell = c.spellcasting.spells.find((s) => s.id === spellId)
+  const fail = (msg: string): CastResult => ({ ok: false, slotLevel: 0, log: [msg] })
+  if (!spell) return fail('Заклинание не найдено')
+  if (spell.ritualOnly && choice.kind !== 'ritual') return fail('Это заклинание можно наложить только как ритуал')
+  if (choice.kind === 'ritual' && !spell.ritual) return fail('Это заклинание не ритуал')
+  if (spell.resourceOnly && spell.resourceId && choice.kind !== 'resource')
+    return fail('Это заклинание накладывается только за счёт ресурса')
+
+  let slotLevel = spell.level
+  if (choice.kind === 'slot') {
+    const slot = c.spellcasting.slots[choice.level - 1]
+    if (!slot || choice.level < spell.level || slot.used >= slot.max) return fail('Нет свободной ячейки этого уровня')
+    slot.used += 1
+    slotLevel = choice.level
+  } else if (choice.kind === 'pact') {
+    const pact = c.spellcasting.pact
+    if (pact.used >= pact.max || pact.level < spell.level) return fail('Нет свободной ячейки договора')
+    pact.used += 1
+    slotLevel = pact.level
+  } else if (choice.kind === 'resource') {
+    const res = c.resources.find((r) => r.id === spell.resourceId)
+    if (!res || res.current <= 0) return fail('Ресурс исчерпан')
+    res.current -= 1
+  }
+
+  const log: string[] = []
+  if (choice.kind === 'resource') {
+    const res = c.resources.find((r) => r.id === spell.resourceId)!
+    log.push(`Потрачено: ${res.name} (осталось ${res.current}/${res.max})`)
+  }
+  if (spell.concentration) {
+    const prev = c.spellcasting.concentration
+    if (prev && prev !== spell.name) log.push(`Концентрация на «${prev}» прервана`)
+    c.spellcasting.concentration = spell.name
+  }
+  if (spell.tempHp.trim()) {
+    const amount = roll(spell.tempHp) + spell.tempHpUpcast * Math.max(0, slotLevel - spell.level)
+    log.push(`Временные хиты: ${amount}`, ...setTempHp(c, amount))
+  }
+  return { ok: true, slotLevel, log }
 }

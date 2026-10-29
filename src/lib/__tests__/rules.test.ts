@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   applyDamage,
   breakConcentrationIfIncapacitated,
+  castSpell,
   deathSave,
   heal,
   isStable,
@@ -23,7 +24,7 @@ import {
   spellSaveDC,
 } from '../calc'
 import { parseDice, rollD20, rollExpr } from '../dice'
-import { newCharacter, newClass, newResource, normalizeCharacter } from '../factory'
+import { newCharacter, newClass, newResource, newSpell, normalizeCharacter } from '../factory'
 import type { CasterType, Character } from '../../types'
 
 const withClasses = (...cls: [CasterType, number][]): Character => {
@@ -296,5 +297,49 @@ describe('правила «Книги игрока» (рус.)', () => {
     expect(passive(c, 'perception')).toBe(12)
     c.conditions = ['poisoned']
     expect(passive(c, 'perception')).toBe(7)
+  })
+})
+
+describe('сотворение заклинаний', () => {
+  const warlock = () => {
+    const c = withClasses(['pact', 3])
+    c.hp = { max: 22, current: 22, temp: 0 }
+    syncSlots(c)
+    const res = { ...newResource(), id: 'ff', name: 'Огонь фей', max: 1, current: 1, reset: 'long' as const }
+    c.resources = [res]
+    c.spellcasting.spells = [
+      { ...newSpell(1), id: 'aga', name: 'Доспех Агатиса', tempHp: '5', tempHpUpcast: 5 },
+      { ...newSpell(1), id: 'fire', name: 'Огонь фей', concentration: true, resourceId: 'ff', resourceOnly: true },
+      { ...newSpell(1), id: 'fam', name: 'Поиск фамильяра', ritual: true, ritualOnly: true },
+    ]
+    return c
+  }
+
+  it('Доспех Агатиса ячейкой договора 2 ур. даёт 10 временных хитов', () => {
+    const c = produce(warlock(), (d) => void castSpell(d, 'aga', { kind: 'pact' }, (e) => Number(e)))
+    expect(c.hp.temp).toBe(10)
+    expect(c.spellcasting.pact.used).toBe(1)
+  })
+
+  it('Огонь фей через ресурс не тратит ячейку и включает концентрацию', () => {
+    const c = produce(warlock(), (d) => void castSpell(d, 'fire', { kind: 'resource' }))
+    expect(c.resources[0].current).toBe(0)
+    expect(c.spellcasting.pact.used).toBe(0)
+    expect(c.spellcasting.concentration).toBe('Огонь фей')
+    let again: { ok: boolean } = { ok: true }
+    produce(c, (d) => void (again = castSpell(d, 'fire', { kind: 'resource' })))
+    expect(again.ok).toBe(false)
+    let bySlot: { ok: boolean } = { ok: true }
+    produce(warlock(), (d) => void (bySlot = castSpell(d, 'fire', { kind: 'pact' })))
+    expect(bySlot.ok).toBe(false)
+  })
+
+  it('ритуал «только как ритуал» не тратит ячейки и не накладывается ячейкой', () => {
+    let r: { ok: boolean } = { ok: true }
+    const c = produce(warlock(), (d) => void (r = castSpell(d, 'fam', { kind: 'pact' })))
+    expect(r.ok).toBe(false)
+    expect(c.spellcasting.pact.used).toBe(0)
+    produce(warlock(), (d) => void (r = castSpell(d, 'fam', { kind: 'ritual' })))
+    expect(r.ok).toBe(true)
   })
 })
